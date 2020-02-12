@@ -78,50 +78,54 @@ namespace AssemblyDumper
                 enums.AddRange(assemblyEnums);
             }
 
-            Console.WriteLine("========================================");
-            Console.WriteLine("================ Classes ===============");
-            Console.WriteLine("========================================");
-            Console.WriteLine();
+            var output = opts.Output != null
+                ? File.CreateText(opts.Output)
+                : Console.Out;
+
+            output.WriteLine("========================================");
+            output.WriteLine("================ Classes ===============");
+            output.WriteLine("========================================");
+            output.WriteLine();
             foreach (var @class in classes)
             {
-                Console.WriteLine(@class);
+                output.WriteLine(@class);
 
-                Console.WriteLine("================ Fields ================");
+                output.WriteLine("================ Fields ================");
                 foreach (var field in @class.GetRuntimeFields())
                 {
-                    Console.WriteLine(field);
+                    output.WriteLine(field);
                 }
 
-                Console.WriteLine("================ Methods ===============");
+                output.WriteLine("================ Methods ===============");
                 foreach (var method in @class.GetMeaningfulMethods()
                     .Where(m => m.DeclaringType == @class))
                 {
-                    Console.WriteLine(method);
+                    output.WriteLine(method);
                 }
 
-                Console.WriteLine();
+                output.WriteLine();
             }
 
-            Console.WriteLine("========================================");
-            Console.WriteLine("================ Enums =================");
-            Console.WriteLine("========================================");
-            Console.WriteLine();
+            output.WriteLine("========================================");
+            output.WriteLine("================ Enums =================");
+            output.WriteLine("========================================");
+            output.WriteLine();
             foreach (var @enum in enums)
             {
                 var type = @enum.GetEnumUnderlyingType();
-                Console.WriteLine($"{@enum} : {type}");
+                output.WriteLine($"{@enum} : {type}");
 
-                Console.WriteLine("================ Members ===============");
+                output.WriteLine("================ Members ===============");
                 var names = @enum.GetEnumNames();
                 var values = @enum.GetEnumValues().OfType<object>()
                     .Select(v => Convert.ChangeType(v, type));
                 foreach (var (name, value) in names.Zip(values))
                 {
-                    Console.WriteLine(
+                    output.WriteLine(
                         $"{name} = {value}");
                 }
 
-                Console.WriteLine();
+                output.WriteLine();
             }
         }
 
