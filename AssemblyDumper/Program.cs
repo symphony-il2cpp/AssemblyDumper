@@ -14,6 +14,33 @@ namespace AssemblyDumper
 {
     internal class Program
     {
+        internal static string[] ValidTypes =
+        {
+            typeof(void).GetFullNameOrName(),
+            typeof(Type).GetFullNameOrName(),
+
+            typeof(byte).GetFullNameOrName(),
+            typeof(sbyte).GetFullNameOrName(),
+            typeof(ushort).GetFullNameOrName(),
+            typeof(short).GetFullNameOrName(),
+            typeof(uint).GetFullNameOrName(),
+            typeof(int).GetFullNameOrName(),
+            typeof(ulong).GetFullNameOrName(),
+            typeof(long).GetFullNameOrName(),
+
+            typeof(UIntPtr).GetFullNameOrName(),
+            typeof(IntPtr).GetFullNameOrName(),
+
+            typeof(float).GetFullNameOrName(),
+            typeof(double).GetFullNameOrName(),
+
+            typeof(bool).GetFullNameOrName(),
+            typeof(string).GetFullNameOrName(),
+            typeof(object).GetFullNameOrName(),
+        };
+
+        internal static string DefaultType = typeof(object).GetFullNameOrName();
+
         internal static void Main(string[] args)
         {
             Parser.Default.ParseArguments<Options>(args).WithParsed(Run);
@@ -82,46 +109,83 @@ namespace AssemblyDumper
                 enums.AddRange(assemblyEnums);
             }
 
-            var outputClasses = classes.Select(c => new Class
+            var validTypes = new HashSet<string>(ValidTypes);
+
+            var outputClasses = classes.Select(c =>
             {
-                Name = c.Name,
-                Namespace = c.Namespace != null
-                    ? c.Namespace.Split(".")
-                    : new string[0],
-                Fields = c.GetFields().Select(f => new Field
+                validTypes.Add(c.GetFullNameOrName());
+
+                return new Class
                 {
-                    Name = f.Name,
-                    Type = f.FieldType.GetFullNameOrName()
-                }).ToArray(),
-                Methods = c.GetMeaningfulMethods().Select(m => new Method
-                {
-                    Name = m.Name,
-                    ReturnType = m.ReturnType.GetFullNameOrName(),
-                    Parameters = m.GetParameters().Select((p, i) =>
-                        new Parameter
-                        {
-                            Name = p.Name ?? $"param{i}",
-                            Type = p.ParameterType.GetFullNameOrName()
-                        }).ToArray(),
-                    IsStatic = m.IsStatic
-                }).ToArray()
-            }).ToArray();
-            var outputEnums = enums.Select(e => new Enum
-            {
-                Name = e.Name,
-                Namespace = e.Namespace != null
-                    ? e.Namespace.Split(".")
-                    : new string[0],
-                BackingType = e.GetEnumUnderlyingType().GetFullNameOrName(),
-                Members = e.GetEnumNames()
-                    .Zip(e.GetEnumValues().OfType<object>().Select(v =>
-                        Convert.ChangeType(v, e.GetEnumUnderlyingType())))
-                    .Select(t => new EnumMember
+                    Name = c.Name,
+                    Namespace = c.Namespace != null
+                        ? c.Namespace.Split(".")
+                        : new string[0],
+                    Fields = c.GetFields().Select(f => new Field
                     {
-                        Name = t.First,
-                        Value = t.Second
+                        Name = f.Name,
+                        Type = f.FieldType.GetFullNameOrName()
+                    }).ToArray(),
+                    Methods = c.GetMeaningfulMethods().Select(m => new Method
+                    {
+                        Name = m.Name,
+                        ReturnType = m.ReturnType.GetFullNameOrName(),
+                        Parameters = m.GetParameters().Select((p, i) =>
+                            new Parameter
+                            {
+                                Name = p.Name ?? $"param{i}",
+                                Type = p.ParameterType.GetFullNameOrName()
+                            }).ToArray(),
+                        IsStatic = m.IsStatic
                     }).ToArray()
+                };
             }).ToArray();
+            var outputEnums = enums.Select(e =>
+            {
+                validTypes.Add(e.GetFullNameOrName());
+
+                return new Enum
+                {
+                    Name = e.Name,
+                    Namespace = e.Namespace != null
+                        ? e.Namespace.Split(".")
+                        : new string[0],
+                    BackingType = e.GetEnumUnderlyingType().GetFullNameOrName(),
+                    Members = e.GetEnumNames()
+                        .Zip(e.GetEnumValues().OfType<object>().Select(v =>
+                            Convert.ChangeType(v, e.GetEnumUnderlyingType())))
+                        .Select(t => new EnumMember
+                        {
+                            Name = t.First,
+                            Value = t.Second
+                        }).ToArray()
+                };
+            }).ToArray();
+
+            foreach (var @class in outputClasses)
+            {
+                foreach (var field in @class.Fields)
+                {
+                    if (!validTypes.ContainsType(field.Type))
+                    {
+                        field.Type = DefaultType;
+                    }
+                }
+                foreach (var method in @class.Methods)
+                {
+                    if (!validTypes.ContainsType(method.ReturnType))
+                    {
+                        method.ReturnType = DefaultType;
+                    }
+                    foreach (var parameter in method.Parameters)
+                    {
+                        if (!validTypes.ContainsType(parameter.Type))
+                        {
+                            parameter.Type = DefaultType;
+                        }
+                    }
+                }
+            }
 
             var output = new Output
             {

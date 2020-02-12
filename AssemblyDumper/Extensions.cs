@@ -35,5 +35,10 @@ namespace AssemblyDumper
 
         public static string GetFullNameOrName(this Type self) =>
             self.FullName ?? self.Name;
+
+        public static bool
+            ContainsType(this HashSet<string> self, string type) =>
+            self.Contains(type) ||
+            type.EndsWith("[]") && self.Contains(type[..^2]);
     }
 }
