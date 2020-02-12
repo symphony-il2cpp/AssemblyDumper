@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using AssemblyDumper.CSharp;
 using CommandLine;
 using Microsoft.Extensions.FileSystemGlobbing;
+using Newtonsoft.Json;
+using Enum = AssemblyDumper.CSharp.Enum;
 
 namespace AssemblyDumper
 {
@@ -78,55 +81,60 @@ namespace AssemblyDumper
                 enums.AddRange(assemblyEnums);
             }
 
-            var output = opts.Output != null
+            var outputClasses = classes.Select(c => new Class
+            {
+                Name = c.Name,
+                Namespace = c.Namespace != null
+                    ? c.Namespace.Split(".")
+                    : new string[0],
+                Fields = c.GetFields().Select(f => new Field
+                {
+                    Name = f.Name,
+                    Type = f.FieldType.GetFullNameOrName()
+                }).ToArray(),
+                Methods = c.GetMeaningfulMethods().Select(m => new Method
+                {
+                    Name = m.Name,
+                    ReturnType = m.ReturnType.GetFullNameOrName(),
+                    Parameters = m.GetParameters().Select((p, i) =>
+                        new Parameter
+                        {
+                            Name = p.Name ?? $"param{i}",
+                            Type = p.ParameterType.GetFullNameOrName()
+                        }).ToArray(),
+                    IsStatic = m.IsStatic
+                }).ToArray()
+            }).ToArray();
+            var outputEnums = enums.Select(e => new Enum
+            {
+                Name = e.Name,
+                Namespace = e.Namespace != null
+                    ? e.Namespace.Split(".")
+                    : new string[0],
+                BackingType = e.GetEnumUnderlyingType().GetFullNameOrName(),
+                Members = e.GetEnumNames()
+                    .Zip(e.GetEnumValues().OfType<object>().Select(v =>
+                        Convert.ChangeType(v, e.GetEnumUnderlyingType())))
+                    .Select(t => new EnumMember
+                    {
+                        Name = t.First,
+                        Value = t.Second
+                    }).ToArray()
+            }).ToArray();
+
+            var output = new Output
+            {
+                Classes = outputClasses,
+                Enums = outputEnums
+            };
+            using var writer = new JsonTextWriter(opts.Output != null
                 ? File.CreateText(opts.Output)
-                : Console.Out;
-
-            output.WriteLine("========================================");
-            output.WriteLine("================ Classes ===============");
-            output.WriteLine("========================================");
-            output.WriteLine();
-            foreach (var @class in classes)
+                : Console.Out);
+            var serializer = new JsonSerializer
             {
-                output.WriteLine(@class);
-
-                output.WriteLine("================ Fields ================");
-                foreach (var field in @class.GetRuntimeFields())
-                {
-                    output.WriteLine(field);
-                }
-
-                output.WriteLine("================ Methods ===============");
-                foreach (var method in @class.GetMeaningfulMethods()
-                    .Where(m => m.DeclaringType == @class))
-                {
-                    output.WriteLine(method);
-                }
-
-                output.WriteLine();
-            }
-
-            output.WriteLine("========================================");
-            output.WriteLine("================ Enums =================");
-            output.WriteLine("========================================");
-            output.WriteLine();
-            foreach (var @enum in enums)
-            {
-                var type = @enum.GetEnumUnderlyingType();
-                output.WriteLine($"{@enum} : {type}");
-
-                output.WriteLine("================ Members ===============");
-                var names = @enum.GetEnumNames();
-                var values = @enum.GetEnumValues().OfType<object>()
-                    .Select(v => Convert.ChangeType(v, type));
-                foreach (var (name, value) in names.Zip(values))
-                {
-                    output.WriteLine(
-                        $"{name} = {value}");
-                }
-
-                output.WriteLine();
-            }
+                Formatting = opts.Pretty ? Formatting.Indented : Formatting.None
+            };
+            serializer.Serialize(writer, output);
         }
 
         public class Options
@@ -154,6 +162,16 @@ namespace AssemblyDumper
             [Option('o', "output",
                 HelpText = "File to output to instead of standard output.")]
             public string Output { get; set; }
+
+            [Option('p', "pretty",
+                HelpText = "Indent the output JSON.")]
+            public bool Pretty { get; set; }
+        }
+
+        public class Output
+        {
+            public Class[] Classes;
+            public Enum[] Enums;
         }
     }
 }

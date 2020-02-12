@@ -32,5 +32,8 @@ namespace AssemblyDumper
         public static bool IsCompilerGenerated(this MemberInfo self) =>
             Attribute.GetCustomAttribute(self,
                 typeof(CompilerGeneratedAttribute)) != null;
+
+        public static string GetFullNameOrName(this Type self) =>
+            self.FullName ?? self.Name;
     }
 }
