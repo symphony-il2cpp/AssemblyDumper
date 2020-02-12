@@ -114,6 +114,7 @@ namespace AssemblyDumper
             var outputClasses = classes.Select(c =>
             {
                 validTypes.Add(c.GetFullNameOrName());
+                Console.WriteLine($"Dumping class {c}");
 
                 return new Class
                 {
@@ -143,6 +144,7 @@ namespace AssemblyDumper
             var outputEnums = enums.Select(e =>
             {
                 validTypes.Add(e.GetFullNameOrName());
+                Console.WriteLine($"Dumping enum {e}");
 
                 return new Enum
                 {
