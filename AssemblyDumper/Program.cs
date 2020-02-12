@@ -7,6 +7,7 @@ using AssemblyDumper.CSharp;
 using CommandLine;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Enum = AssemblyDumper.CSharp.Enum;
 
 namespace AssemblyDumper
@@ -132,7 +133,12 @@ namespace AssemblyDumper
                 : Console.Out);
             var serializer = new JsonSerializer
             {
-                Formatting = opts.Pretty ? Formatting.Indented : Formatting.None
+                Formatting =
+                    opts.Pretty ? Formatting.Indented : Formatting.None,
+                ContractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy()
+                }
             };
             serializer.Serialize(writer, output);
         }
