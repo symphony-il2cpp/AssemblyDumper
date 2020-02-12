@@ -11,7 +11,7 @@ namespace AssemblyDumper
     {
         public static IEnumerable<Regex> ToRegexes(
             this IEnumerable<string> self) =>
-            self.SelectMany((p) =>
+            self.SelectMany(p =>
             {
                 try
                 {
