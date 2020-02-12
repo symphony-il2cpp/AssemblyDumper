@@ -3,32 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using CommandLine;
 using Microsoft.Extensions.FileSystemGlobbing;
 
 namespace AssemblyDumper
 {
-    internal static class Extensions
-    {
-        public static Regex[] ToRegexes(
-            this IEnumerable<string> self)
-        {
-            return self.SelectMany((p) =>
-            {
-                try
-                {
-                    return new[] {new Regex(p)};
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine(ex);
-                    return new Regex[0];
-                }
-            }).ToArray();
-        }
-    }
-
     internal class Program
     {
         public class Options
@@ -70,8 +49,8 @@ namespace AssemblyDumper
             var matches =
                 matcher.GetResultsInFullPath(Directory.GetCurrentDirectory());
 
-            var blacklist = opts.Blacklist.ToRegexes();
-            var whitelist = opts.Whitelist.ToRegexes();
+            var blacklist = opts.Blacklist.ToRegexes().ToArray();
+            var whitelist = opts.Whitelist.ToRegexes().ToArray();
 
             var assemblies = matches.SelectMany((m) =>
             {
@@ -101,7 +80,8 @@ namespace AssemblyDumper
                 }
 
                 var assemblyClasses =
-                    assembly.GetTypes().Where((t) => t.IsClass);
+                    assembly.GetTypes().Where((t) =>
+                        t.IsClass && !t.IsCompilerGenerated());
 
                 if (blacklist.Length > 0)
                 {
@@ -120,6 +100,21 @@ namespace AssemblyDumper
             foreach (var klass in classes)
             {
                 Console.WriteLine(klass);
+
+                Console.WriteLine("================ Fields ================");
+                foreach (var field in klass.GetRuntimeFields())
+                {
+                    Console.WriteLine(field);
+                }
+
+                Console.WriteLine("================ Methods ================");
+                foreach (var method in klass.GetMeaningfulMethods()
+                    .Where(m => m.DeclaringType == klass))
+                {
+                    Console.WriteLine(method);
+                }
+
+                Console.WriteLine();
             }
         }
     }
