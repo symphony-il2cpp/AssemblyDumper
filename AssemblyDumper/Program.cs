@@ -118,7 +118,7 @@ namespace AssemblyDumper
                 foreach (var (name, value) in names.Zip(values))
                 {
                     Console.WriteLine(
-                        $"{name}{(value != null ? $" = {value}" : "")}");
+                        $"{name} = {value}");
                 }
 
                 Console.WriteLine();
