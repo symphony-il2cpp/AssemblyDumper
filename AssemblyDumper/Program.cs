@@ -144,7 +144,7 @@ namespace AssemblyDumper
                     }).ToArray(),
                     Methods = c.GetMeaningfulMethods()
                         .Where(m =>
-                            !opts.InheritedMethods || m.DeclaringType == c)
+                            opts.InheritedMethods || m.DeclaringType == c)
                         .Select(m => new Method
                         {
                             Name = m.Name,
