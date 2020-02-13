@@ -94,13 +94,14 @@ namespace AssemblyDumper
                 {
                     assemblyTypes = assemblyTypes.Where(t =>
                             !blacklist.Any(r =>
-                                r.IsMatch(t.FullName ?? t.Name)))
+                                r.IsMatch(t.GetFullNameOrName())))
                         .ToArray();
                 }
-                else if (whitelist.Length > 0)
+                if (whitelist.Length > 0)
                 {
                     assemblyTypes = assemblyTypes.Where(t =>
-                            whitelist.Any(r => r.IsMatch(t.FullName ?? t.Name)))
+                            whitelist.Any(r =>
+                                r.IsMatch(t.GetFullNameOrName())))
                         .ToArray();
                 }
 
@@ -228,14 +229,12 @@ namespace AssemblyDumper
 
             [Option('b', "blacklist",
                 HelpText =
-                    "Classes to blacklist, evaluated as regular expressions.",
-                SetName = "Blacklist")]
+                    "Classes to blacklist, evaluated as regular expressions.")]
             public IEnumerable<string> Blacklist { get; set; }
 
             [Option('w', "whitelist",
                 HelpText =
-                    "Classes to whitelist, evaluated as regular expressions.",
-                SetName = "Whitelist")]
+                    "Classes to whitelist, evaluated as regular expressions.")]
             public IEnumerable<string> Whitelist { get; set; }
 
             [Option('o', "output",
