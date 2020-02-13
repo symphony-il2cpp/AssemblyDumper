@@ -150,6 +150,7 @@ namespace AssemblyDumper
                 return new Class
                 {
                     Name = c.GetScuffedName(),
+                    InternalName = c.Name,
                     Namespace = c.Namespace != null
                         ? c.Namespace.Split(".")
                         : new string[0],
@@ -170,6 +171,7 @@ namespace AssemblyDumper
                             Name = f.Name.EndsWith("k__BackingField")
                                 ? $"{f.Name[1..^16]}__BackingField"
                                 : f.Name,
+                            InternalName = f.Name,
                             Type = f.FieldType.GetFullNameOrName()
                         }).ToArray(),
                     Constructors = c.GetConstructors().Select(ctor =>
@@ -204,6 +206,7 @@ namespace AssemblyDumper
                 return new Enum
                 {
                     Name = e.GetScuffedName(),
+                    InternalName = e.Name,
                     Namespace = e.Namespace != null
                         ? e.Namespace.Split(".")
                         : new string[0],
