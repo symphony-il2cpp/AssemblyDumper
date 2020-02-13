@@ -4,8 +4,9 @@
     {
         public string Name;
         public string[] Namespace;
-        public Constructor[] Constructors;
+        public StaticField[] StaticFields;
         public Field[] Fields;
+        public Constructor[] Constructors;
         public Method[] Methods;
     }
 }

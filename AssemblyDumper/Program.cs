@@ -43,6 +43,29 @@ namespace AssemblyDumper
             typeof(Delegate).GetFullNameOrName()
         };
 
+        internal static HashSet<string> ValidStaticTypes = new HashSet<string>(
+            new[]
+            {
+                typeof(byte).GetFullNameOrName(),
+                typeof(sbyte).GetFullNameOrName(),
+                typeof(ushort).GetFullNameOrName(),
+                typeof(short).GetFullNameOrName(),
+                typeof(uint).GetFullNameOrName(),
+                typeof(int).GetFullNameOrName(),
+                typeof(ulong).GetFullNameOrName(),
+                typeof(long).GetFullNameOrName(),
+
+                typeof(UIntPtr).GetFullNameOrName(),
+                typeof(IntPtr).GetFullNameOrName(),
+
+                typeof(float).GetFullNameOrName(),
+                typeof(double).GetFullNameOrName(),
+
+                typeof(bool).GetFullNameOrName(),
+
+                typeof(string).GetFullNameOrName()
+            });
+
         internal static string DefaultType = typeof(object).GetFullNameOrName();
 
         internal static void Main(string[] args)
@@ -130,6 +153,21 @@ namespace AssemblyDumper
                     Namespace = c.Namespace != null
                         ? c.Namespace.Split(".")
                         : new string[0],
+                    StaticFields = c.GetRuntimeFields().Where(f => f.IsStatic)
+                        .Select(f =>
+                            new StaticField
+                            {
+                                Name = f.Name,
+                                Type = f.FieldType.GetFullNameOrName(),
+                                Value = Convert.ChangeType(f.GetValue(null),
+                                    f.FieldType)
+                            }).ToArray(),
+                    Fields = c.GetRuntimeFields().Where(f => !f.IsStatic)
+                        .Select(f => new Field
+                        {
+                            Name = f.Name,
+                            Type = f.FieldType.GetFullNameOrName()
+                        }).ToArray(),
                     Constructors = c.GetConstructors().Select(ctor =>
                         new Constructor
                         {
@@ -137,11 +175,6 @@ namespace AssemblyDumper
                                 .Select(Parameter.SelectFromParameterInfo)
                                 .ToArray()
                         }).ToArray(),
-                    Fields = c.GetFields().Select(f => new Field
-                    {
-                        Name = f.Name,
-                        Type = f.FieldType.GetFullNameOrName()
-                    }).ToArray(),
                     Methods = c.GetMeaningfulMethods()
                         .Where(m =>
                             opts.InheritedMethods || m.DeclaringType == c)
@@ -184,11 +217,29 @@ namespace AssemblyDumper
 
             foreach (var @class in outputClasses)
             {
+                foreach (var staticField in @class.StaticFields)
+                {
+                    if (!ValidStaticTypes.ContainsType(staticField.Type))
+                    {
+                        @class.StaticFields = @class.StaticFields
+                            .Where(f => f != staticField).ToArray();
+                    }
+                }
                 foreach (var field in @class.Fields)
                 {
                     if (!validTypes.ContainsType(field.Type))
                     {
                         field.Type = DefaultType;
+                    }
+                }
+                foreach (var constructor in @class.Constructors)
+                {
+                    foreach (var parameter in constructor.Parameters)
+                    {
+                        if (!validTypes.ContainsType(parameter.Type))
+                        {
+                            parameter.Type = DefaultType;
+                        }
                     }
                 }
                 foreach (var method in @class.Methods)
