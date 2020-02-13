@@ -6,5 +6,6 @@
         public string ReturnType;
         public Parameter[] Parameters;
         public bool IsStatic;
+        public bool IsUnsafe;
     }
 }

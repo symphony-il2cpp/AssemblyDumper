@@ -39,6 +39,7 @@ namespace AssemblyDumper
         public static bool
             ContainsType(this HashSet<string> self, string type) =>
             self.Contains(type) ||
+            type.EndsWith("*") ||
             type.EndsWith("[]") && self.Contains(type[..^2]);
     }
 }
