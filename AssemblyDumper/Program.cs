@@ -17,7 +17,6 @@ namespace AssemblyDumper
         internal static string[] ValidTypes =
         {
             typeof(void).GetFullNameOrName(),
-            typeof(Type).GetFullNameOrName(),
 
             typeof(byte).GetFullNameOrName(),
             typeof(sbyte).GetFullNameOrName(),
@@ -35,8 +34,13 @@ namespace AssemblyDumper
             typeof(double).GetFullNameOrName(),
 
             typeof(bool).GetFullNameOrName(),
+
             typeof(string).GetFullNameOrName(),
             typeof(object).GetFullNameOrName(),
+
+            typeof(Type).GetFullNameOrName(),
+            typeof(Exception).GetFullNameOrName(),
+            typeof(Delegate).GetFullNameOrName()
         };
 
         internal static string DefaultType = typeof(object).GetFullNameOrName();
