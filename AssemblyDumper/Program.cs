@@ -149,7 +149,7 @@ namespace AssemblyDumper
 
                 return new Class
                 {
-                    Name = c.Name,
+                    Name = c.GetScuffedName(),
                     Namespace = c.Namespace != null
                         ? c.Namespace.Split(".")
                         : new string[0],
@@ -203,7 +203,7 @@ namespace AssemblyDumper
 
                 return new Enum
                 {
-                    Name = e.Name,
+                    Name = e.GetScuffedName(),
                     Namespace = e.Namespace != null
                         ? e.Namespace.Split(".")
                         : new string[0],

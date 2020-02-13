@@ -34,7 +34,10 @@ namespace AssemblyDumper
                 typeof(CompilerGeneratedAttribute)) != null;
 
         public static string GetFullNameOrName(this Type self) =>
-            self.FullName ?? self.Name;
+            (self.FullName ?? self.Name).Replace("+", "__");
+
+        public static string GetScuffedName(this Type self) =>
+            self.GetFullNameOrName().Split(".").Last();
 
         public static bool
             ContainsType(this HashSet<string> self, string type) =>
