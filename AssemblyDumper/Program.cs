@@ -129,7 +129,8 @@ namespace AssemblyDumper
                 }
 
                 var assemblyClasses = assemblyTypes.Where(t =>
-                    t.IsClass && !t.IsCompilerGenerated());
+                    t.IsClass && !t.IsCompilerGenerated() &&
+                    !t.ContainsGenericParameters);
                 classes.AddRange(assemblyClasses);
 
                 var assemblyEnums = assemblyTypes.Where(t =>
@@ -174,16 +175,20 @@ namespace AssemblyDumper
                             InternalName = f.Name,
                             Type = f.FieldType.GetFullNameOrName()
                         }).ToArray(),
-                    Constructors = c.GetConstructors().Select(ctor =>
-                        new Constructor
-                        {
-                            Parameters = ctor.GetParameters()
-                                .Select(Parameter.SelectFromParameterInfo)
-                                .ToArray()
-                        }).ToArray(),
+                    Constructors = c.GetConstructors()
+                        .Where(ctor => !ctor.ContainsGenericParameters).Select(
+                            ctor =>
+                                new Constructor
+                                {
+                                    Parameters = ctor.GetParameters()
+                                        .Select(Parameter
+                                            .SelectFromParameterInfo)
+                                        .ToArray()
+                                }).ToArray(),
                     Methods = c.GetMeaningfulMethods()
-                        .Where(m =>
-                            opts.InheritedMethods || m.DeclaringType == c)
+                        .Where(m => !m.ContainsGenericParameters &&
+                                    (opts.InheritedMethods ||
+                                     m.DeclaringType == c))
                         .Select(m => new Method
                         {
                             Name = m.Name,
