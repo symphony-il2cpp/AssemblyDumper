@@ -127,6 +127,13 @@ namespace AssemblyDumper
                     Namespace = c.Namespace != null
                         ? c.Namespace.Split(".")
                         : new string[0],
+                    Constructors = c.GetConstructors().Select(ctor =>
+                        new Constructor
+                        {
+                            Parameters = ctor.GetParameters()
+                                .Select(Parameter.SelectFromParameterInfo)
+                                .ToArray()
+                        }).ToArray(),
                     Fields = c.GetFields().Select(f => new Field
                     {
                         Name = f.Name,
@@ -139,12 +146,9 @@ namespace AssemblyDumper
                         {
                             Name = m.Name,
                             ReturnType = m.ReturnType.GetFullNameOrName(),
-                            Parameters = m.GetParameters().Select((p, i) =>
-                                new Parameter
-                                {
-                                    Name = p.Name ?? $"param{i}",
-                                    Type = p.ParameterType.GetFullNameOrName()
-                                }).ToArray(),
+                            Parameters = m.GetParameters()
+                                .Select(Parameter.SelectFromParameterInfo)
+                                .ToArray(),
                             IsStatic = m.IsStatic
                         }).ToArray()
                 };
