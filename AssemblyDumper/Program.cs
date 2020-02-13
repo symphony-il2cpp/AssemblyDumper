@@ -165,7 +165,9 @@ namespace AssemblyDumper
                     Fields = c.GetRuntimeFields().Where(f => !f.IsStatic)
                         .Select(f => new Field
                         {
-                            Name = f.Name,
+                            Name = f.Name.EndsWith("k__BackingField")
+                                ? $"{f.Name[1..^16]}__BackingField"
+                                : f.Name,
                             Type = f.FieldType.GetFullNameOrName()
                         }).ToArray(),
                     Constructors = c.GetConstructors().Select(ctor =>
