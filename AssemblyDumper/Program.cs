@@ -131,18 +131,21 @@ namespace AssemblyDumper
                         Name = f.Name,
                         Type = f.FieldType.GetFullNameOrName()
                     }).ToArray(),
-                    Methods = c.GetMeaningfulMethods().Select(m => new Method
-                    {
-                        Name = m.Name,
-                        ReturnType = m.ReturnType.GetFullNameOrName(),
-                        Parameters = m.GetParameters().Select((p, i) =>
-                            new Parameter
-                            {
-                                Name = p.Name ?? $"param{i}",
-                                Type = p.ParameterType.GetFullNameOrName()
-                            }).ToArray(),
-                        IsStatic = m.IsStatic
-                    }).ToArray()
+                    Methods = c.GetMeaningfulMethods()
+                        .Where(m =>
+                            !opts.InheritedMethods || m.DeclaringType == c)
+                        .Select(m => new Method
+                        {
+                            Name = m.Name,
+                            ReturnType = m.ReturnType.GetFullNameOrName(),
+                            Parameters = m.GetParameters().Select((p, i) =>
+                                new Parameter
+                                {
+                                    Name = p.Name ?? $"param{i}",
+                                    Type = p.ParameterType.GetFullNameOrName()
+                                }).ToArray(),
+                            IsStatic = m.IsStatic
+                        }).ToArray()
                 };
             }).ToArray();
             var outputEnums = enums.Select(e =>
@@ -239,9 +242,12 @@ namespace AssemblyDumper
                 HelpText = "File to output to instead of standard output.")]
             public string Output { get; set; }
 
-            [Option('p', "pretty",
-                HelpText = "Indent the output JSON.")]
+            [Option('p', "pretty", HelpText = "Indent the output JSON.")]
             public bool Pretty { get; set; }
+
+            [Option('i', "inherited-methods",
+                HelpText = "Dump inherited methods.")]
+            public bool InheritedMethods { get; set; }
         }
 
         public class Output
