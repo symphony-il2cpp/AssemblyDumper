@@ -153,15 +153,17 @@ namespace AssemblyDumper
                     Namespace = c.Namespace != null
                         ? c.Namespace.Split(".")
                         : new string[0],
-                    StaticFields = c.GetRuntimeFields().Where(f => f.IsStatic)
-                        .Select(f =>
-                            new StaticField
-                            {
-                                Name = f.Name,
-                                Type = f.FieldType.GetFullNameOrName(),
-                                Value = Convert.ChangeType(f.GetValue(null),
-                                    f.FieldType)
-                            }).ToArray(),
+                    StaticFields = c.GetRuntimeFields().Where(f =>
+                        f.IsStatic &&
+                        ValidStaticTypes.ContainsType(
+                            f.FieldType.GetFullNameOrName())).Select(f =>
+                        new StaticField
+                        {
+                            Name = f.Name,
+                            Type = f.FieldType.GetFullNameOrName(),
+                            Value = Convert.ChangeType(f.GetValue(null),
+                                f.FieldType)
+                        }).ToArray(),
                     Fields = c.GetRuntimeFields().Where(f => !f.IsStatic)
                         .Select(f => new Field
                         {
@@ -219,14 +221,6 @@ namespace AssemblyDumper
 
             foreach (var @class in outputClasses)
             {
-                foreach (var staticField in @class.StaticFields)
-                {
-                    if (!ValidStaticTypes.ContainsType(staticField.Type))
-                    {
-                        @class.StaticFields = @class.StaticFields
-                            .Where(f => f != staticField).ToArray();
-                    }
-                }
                 foreach (var field in @class.Fields)
                 {
                     if (!validTypes.ContainsType(field.Type))
